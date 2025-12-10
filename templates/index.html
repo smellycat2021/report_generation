@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Summary Report Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>📈 Board Report Generator</h1>
+        <p>Upload manufacturer Excel files (XLSX, XLS) and generate a consolidated summary report.</p>
+        
+        <div class="drop-area" id="dropArea">
+            <p>Drag & Drop files here, or click to select files. </p>
+            <input type="file" id="fileInput" multiple accept=".xlsx, .xls" style="display: none;">
+        </div>
+        
+        <div class="file-list">
+            <h3>Uploaded Files:</h3>
+            <ul id="uploadedFilesList"><li>No files selected.</li></ul>
+        </div>
+
+        <button id="generateButton" class="btn primary-btn">
+            Generate Board Report
+        </button>
+
+        <div class="status-section" id="statusSection">
+            <p id="statusMessage" class="status-text">Ready to process.</p>
+            
+            <div id="progressBarContainer" class="progress-container hidden">
+                <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+            </div>
+
+            <div id="downloadLinkArea" class="hidden">
+                <a id="downloadButton" href="#" class="btn download-btn" target="_blank">
+                    ⬇️ Download Final Report
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='dist/app.js') }}" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+// interfaces.ts
+export {};
+// Any other core data models go here...
