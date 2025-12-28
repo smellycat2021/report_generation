@@ -321,22 +321,22 @@
     <!-- Edit/Add Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header" id="modalTitle">Edit Known Product Name</div>
+            <div class="modal-header" id="modalTitle">编辑已知产品名称 Edit Known Product Name</div>
             <form id="editForm">
                 <div class="form-group">
                     <label>产品名称 Product Name (品名) <span class="required">*</span></label>
                     <input type="text" id="productName" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" id="saveBtn" class="btn btn-success">Save</button>
+                    <button type="button" id="cancelBtn" class="btn btn-secondary">取消 Cancel</button>
+                    <button type="submit" id="saveBtn" class="btn btn-success">保存 Save</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        let current第 = 1;
+        let currentPage = 1;
         let currentSearch = '';
         let editingId = null;
 
@@ -467,7 +467,7 @@
 
                 document.getElementById('productName').value = data.product_name;
 
-                openModal('Edit Known Product Name', id);
+                openModal('编辑已知产品名称 Edit Known Product Name', id);
             } catch (error) {
                 showAlert('Failed to load product name: ' + error.message, 'error');
             }
@@ -498,7 +498,7 @@
         });
 
         document.getElementById('addNewBtn').addEventListener('click', () => {
-            openModal('Add New Known Product Name');
+            openModal('添加新产品名称 Add New Known Product Name');
         });
 
         document.getElementById('cancelBtn').addEventListener('click', closeModal);
