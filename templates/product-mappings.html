@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品映射管理 - Product Mappings</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .nav-links {
+            margin-bottom: 20px;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: #f7fafc;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .page-info {
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .required {
+            color: #f56565;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/products">← 返回产品管理 (Back to Products Manager)</a>
+        </div>
+
+        <h1>产品映射 Product Mappings</h1>
+        <p class="subtitle">管理产品重量和尺寸映射 (品名 → 箱重量 + 箱尺寸) | Manage product weight and size mappings</p>
+
+        <div id="alertContainer"></div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="搜索产品名称... Search by product name...">
+            <button id="addNewBtn" class="btn btn-primary">+ 添加新产品 Add New Product</button>
+        </div>
+
+        <div class="table-container">
+            <table id="productTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>产品名称 Product Name (品名)</th>
+                        <th style="width: 120px;">重量 Weight (箱重量)</th>
+                        <th style="width: 150px;">尺寸 Size (箱尺寸)</th>
+                        <th style="width: 150px;">操作 Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="5" class="loading">加载中... Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- Edit/Add Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">编辑产品映射 Edit Product Mapping</div>
+            <form id="editForm">
+                <div class="form-group">
+                    <label>产品名称 Product Name (品名) <span class="required">*</span></label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>箱重量 Box Weight (kg)</label>
+                    <input type="number" id="boxWeight" step="0.1" placeholder="例如 e.g., 11.6">
+                </div>
+                <div class="form-group">
+                    <label>箱尺寸 Box Size</label>
+                    <input type="text" id="boxSize" placeholder="例如 e.g., 41*36*25">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelBtn" class="btn btn-secondary">取消 Cancel</button>
+                    <button type="submit" id="saveBtn" class="btn btn-success">保存 Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let currentSearch = '';
+        let editingId = null;
+
+        // API Functions
+        async function fetchProductMappings(page = 1, search = '') {
+            const params = new URLSearchParams({ page, per_page: 50 });
+            if (search) params.append('search', search);
+
+            const response = await fetch(`/api/product-mappings?${params}`);
+            return response.json();
+        }
+
+        async function createProductMapping(data) {
+            const response = await fetch('/api/product-mappings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to create');
+            }
+            return response.json();
+        }
+
+        async function updateProductMapping(id, data) {
+            const response = await fetch(`/api/product-mappings/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update');
+            }
+            return response.json();
+        }
+
+        async function deleteProductMapping(id) {
+            const response = await fetch(`/api/product-mappings/${id}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to delete');
+            }
+            return response.json();
+        }
+
+        // UI Functions
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+
+            if (data.items.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div>未找到产品 No products found</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.items.map(item => `
+                <tr>
+                    <td>${item.id}</td>
+                    <td><strong>${item.product_name}</strong></td>
+                    <td>${item.box_weight !== null ? item.box_weight + ' kg' : '-'}</td>
+                    <td>${item.box_size || '-'}</td>
+                    <td class="actions">
+                        <button class="btn btn-primary btn-small" onclick="editProduct(${item.id})">编辑 Edit</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteProduct(${item.id}, '${item.product_name.replace(/'/g, "\\'")}')">删除 Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(data) {
+            const container = document.getElementById('pagination');
+            const { page, pages, total } = data;
+
+            container.innerHTML = `
+                <button class="btn btn-secondary btn-small" ${page <= 1 ? 'disabled' : ''} onclick="changePage(${page - 1})">上一页 Previous</button>
+                <span class="page-info">第 ${page} 页 / 共 ${pages} 页 (总数: ${total}) | Page ${page} of ${pages} (Total: ${total})</span>
+                <button class="btn btn-secondary btn-small" ${page >= pages ? 'disabled' : ''} onclick="changePage(${page + 1})">下一页 Next</button>
+            `;
+        }
+
+        async function loadData() {
+            try {
+                const data = await fetchProductMappings(currentPage, currentSearch);
+                renderTable(data);
+                renderPagination(data);
+            } catch (error) {
+                showAlert('Failed to load data: ' + error.message, 'error');
+            }
+        }
+
+        function openModal(title, id = null) {
+            editingId = id;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('editModal').classList.add('active');
+
+            if (id === null) {
+                // Add new
+                document.getElementById('editForm').reset();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            document.getElementById('editForm').reset();
+            editingId = null;
+        }
+
+        async function editProduct(id) {
+            try {
+                const response = await fetch(`/api/product-mappings/${id}`);
+                const data = await response.json();
+
+                document.getElementById('productName').value = data.product_name;
+                document.getElementById('boxWeight').value = data.box_weight || '';
+                document.getElementById('boxSize').value = data.box_size || '';
+
+                openModal('Edit Product Mapping', id);
+            } catch (error) {
+                showAlert('Failed to load product: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteProduct(id, name) {
+            if (!confirm(`确定要删除 "${name}" 吗？\nAre you sure you want to delete "${name}"?`)) return;
+
+            try {
+                await deleteProductMapping(id);
+                showAlert('产品删除成功 Product deleted successfully');
+                loadData();
+            } catch (error) {
+                showAlert('删除失败 Failed to delete: ' + error.message, 'error');
+            }
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadData();
+        }
+
+        // Event Listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            currentPage = 1;
+            setTimeout(() => loadData(), 300);
+        });
+
+        document.getElementById('addNewBtn').addEventListener('click', () => {
+            openModal('添加新产品映射 Add New Product Mapping');
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', closeModal);
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                product_name: document.getElementById('productName').value.trim(),
+                box_weight: document.getElementById('boxWeight').value || null,
+                box_size: document.getElementById('boxSize').value.trim() || null
+            };
+
+            try {
+                if (editingId) {
+                    await updateProductMapping(editingId, data);
+                    showAlert('产品更新成功 Product updated successfully');
+                } else {
+                    await createProductMapping(data);
+                    showAlert('产品创建成功 Product created successfully');
+                }
+                closeModal();
+                loadData();
+            } catch (error) {
+                showAlert('错误 Error: ' + error.message, 'error');
+            }
+        });
+
+        // Close modal on outside click
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeModal();
+        });
+
+        // Initial load
+        loadData();
+    </script>
+</body>
+</html>

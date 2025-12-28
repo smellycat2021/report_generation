@@ -8,33 +8,39 @@
 </head>
 <body>
     <div class="container">
-        <h1>📈 Board Report Generator</h1>
-        <p>Upload manufacturer Excel files (XLSX, XLS) and generate a consolidated summary report.</p>
+        <div style="margin-bottom: 15px;">
+            <a href="/products" style="color: #667eea; text-decoration: none; font-weight: 500;">
+                🗂️ 产品管理 Products Manager
+            </a>
+        </div>
+
+        <h1>📈 报表生成器 Board Report Generator</h1>
+        <p>上传制造商Excel文件 (XLSX, XLS) 并生成合并汇总报表 | Upload manufacturer Excel files and generate a consolidated summary report.</p>
         
         <div class="drop-area" id="dropArea">
-            <p>Drag & Drop files here, or click to select files. </p>
+            <p>拖放文件到此处，或点击选择文件 | Drag & Drop files here, or click to select files </p>
             <input type="file" id="fileInput" multiple accept=".xlsx, .xls" style="display: none;">
         </div>
-        
+
         <div class="file-list">
-            <h3>Uploaded Files:</h3>
-            <ul id="uploadedFilesList"><li>No files selected.</li></ul>
+            <h3>已上传文件 Uploaded Files:</h3>
+            <ul id="uploadedFilesList"><li>未选择文件 No files selected.</li></ul>
         </div>
 
         <button id="generateButton" class="btn primary-btn">
-            Generate Board Report
+            生成报表 Generate Board Report
         </button>
 
         <div class="status-section" id="statusSection">
-            <p id="statusMessage" class="status-text">Ready to process.</p>
-            
+            <p id="statusMessage" class="status-text">准备就绪 Ready to process.</p>
+
             <div id="progressBarContainer" class="progress-container hidden">
                 <div id="progressBar" class="progress-bar" style="width: 0%"></div>
             </div>
 
             <div id="downloadLinkArea" class="hidden">
                 <a id="downloadButton" href="#" class="btn download-btn" target="_blank">
-                    ⬇️ Download Final Report
+                    ⬇️ 下载最终报表 Download Final Report
                 </a>
             </div>
         </div>
