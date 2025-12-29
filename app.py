@@ -20,6 +20,10 @@ app.config['ENV'] = 'production'
 
 init_db(app) # Initialize database tables
 
+# Ensure upload and report folders exist (important for deployment)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(REPORT_FOLDER, exist_ok=True)
+
 # --- This is the critical part ---
 @app.route('/')
 def index():
