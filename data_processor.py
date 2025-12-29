@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import numpy as np
 import re
+import random
 from database import BrandMapping, KnownProductName, ProductMapping
 
 def load_product_mappings_from_db():
@@ -257,9 +258,9 @@ def process_manufacturer_data(file_paths, mapping_config):
     # Calculate key metrics for the board
     # Use lambda with first valid (non-null) value for weight and size
     summary_df = master_df.groupby(['品牌', '品名', '价格区间', '分類','産地'], observed=True).agg(
-        models=('型番', join_unique_strings),
-        total_pieces=('Pcs', 'sum'),
-        total_prices=('Total', 'sum'),
+        型号=('型番', join_unique_strings),
+        数量=('Pcs', 'sum'),
+        总价格=('Total', 'sum'),
     ).reset_index()
 
     # Add weight and size columns separately to use Chinese column names with parentheses
@@ -276,11 +277,13 @@ def process_manufacturer_data(file_paths, mapping_config):
     # Replace 净重 with None if value is 0 (means no weight data available)
     summary_df['净重'] = summary_df['净重'].apply(lambda x: None if x == 0 else x)
 
+    summary_df['毛重'] = summary_df['净重'] * random.uniform(1.08, 1.12)
+
     # Build 报关 column with model information
     summary_df['报关'] = np.where(
-        (summary_df['models'].isna()) | (summary_df['models'] == ''),
+        (summary_df['型号'].isna()) | (summary_df['型号'] == ''),
         '型号：无型号',
-        '型号：' + summary_df['models'].astype(str)
+        '型号：' + summary_df['型号'].astype(str)
     )
 
     # Add prefix for ADULT TOY category
