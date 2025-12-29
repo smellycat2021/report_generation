@@ -7,18 +7,22 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 import json
-from config import UPLOAD_FOLDER, REPORT_FOLDER, ALLOWED_EXTENSIONS
+from config import UPLOAD_FOLDER, REPORT_FOLDER, ALLOWED_EXTENSIONS, SQLALCHEMY_DATABASE_URI
 # Import other modules
 # from database import db
 # from report_generator import generate_summary_report
 
 app = Flask(__name__, static_folder='client')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'  # Or use a separate config file
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI  # Use config from config.py (supports both PostgreSQL and SQLite)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['DEBUG'] = False # CRITICAL for security
 app.config['ENV'] = 'production'
 
 init_db(app) # Initialize database tables
+
+# Ensure upload and report folders exist (important for deployment)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(REPORT_FOLDER, exist_ok=True)
 
 # --- This is the critical part ---
 @app.route('/')
