@@ -24,7 +24,7 @@ def load_product_mappings_from_db():
 #     Only updates existing products or creates new ones if weight/size data is available.
 #
 #     Args:
-#         df: DataFrame with columns '品名', '箱重量', '箱尺寸'
+#         df: DataFrame with columns '品名', '单件净重(kg)', '规格'
 #     """
 #     ...
 
@@ -228,7 +228,7 @@ def process_manufacturer_data(file_paths, mapping_config):
     )
 
     # Load product weight/size mappings from database ONLY
-    # Excel files should NOT contain 箱重量 or 箱尺寸 - all data comes from ProductMapping table
+    # Excel files should NOT contain 单件净重(kg) or 规格 - all data comes from ProductMapping table
     product_mappings = load_product_mappings_from_db()
 
     # Create mapping functions
@@ -240,18 +240,19 @@ def process_manufacturer_data(file_paths, mapping_config):
         mapping = product_mappings.get(product_name)
         return mapping['size'] if mapping and mapping['size'] is not None else None
 
-    # Always populate 箱重量 and 箱尺寸 from database, ignoring any Excel columns
+    # Always populate 单件净重(kg) and 规格 from database, ignoring any Excel columns
     # This ensures we ONLY use data from ProductMapping table
-    master_df['箱重量'] = master_df['品名'].apply(get_weight)
-    master_df['箱尺寸'] = master_df['品名'].apply(get_size)
+    master_df['单件净重(kg)'] = master_df['品名'].apply(get_weight)
+    master_df['规格'] = master_df['品名'].apply(get_size)
 
     # Calculate key metrics for the board
+    # Use lambda with first valid (non-null) value for weight and size
     summary_df = master_df.groupby(['品牌', '品名', '价格区间', '分類','産地'], observed=True).agg(
         models=('型番', join_unique_strings),
         total_pieces=('Pcs', 'sum'),
         total_prices=('Total', 'sum'),
-        box_weight=('箱重量', 'first'),  # Include box weight in summary
-        box_size=('箱尺寸', 'first'),    # Include box size in summary
+        box_weight=('单件净重(kg)', lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None),  # First non-null value
+        box_size=('规格', lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None),  # First non-null value
     ).reset_index()
 
     summary_df['报关'] = np.where(
