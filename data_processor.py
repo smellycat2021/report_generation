@@ -245,6 +245,9 @@ def process_manufacturer_data(file_paths, mapping_config):
     master_df['单件净重(kg)'] = master_df['品名'].apply(get_weight)
     master_df['规格'] = master_df['品名'].apply(get_size)
 
+    # Calculate 净重 (net weight) = 单件净重(kg) * Pcs
+    master_df['净重'] = master_df['单件净重(kg)'] * master_df['Pcs']
+
     # Calculate key metrics for the board
     # Use lambda with first valid (non-null) value for weight and size
     summary_df = master_df.groupby(['品牌', '品名', '价格区间', '分類','産地'], observed=True).agg(
@@ -253,6 +256,7 @@ def process_manufacturer_data(file_paths, mapping_config):
         total_prices=('Total', 'sum'),
         box_weight=('单件净重(kg)', lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None),  # First non-null value
         box_size=('规格', lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None),  # First non-null value
+        total_net_weight=('净重', 'sum'),  # Sum of all net weights (单件净重 * Pcs)
     ).reset_index()
 
     summary_df['报关'] = np.where(
