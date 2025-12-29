@@ -259,10 +259,19 @@ def process_manufacturer_data(file_paths, mapping_config):
         total_net_weight=('净重', 'sum'),  # Sum of all net weights (单件净重 * Pcs)
     ).reset_index()
 
+    # Build 报关 column with model information
     summary_df['报关'] = np.where(
         (summary_df['models'].isna()) | (summary_df['models'] == ''),
         summary_df['分類'] + ' 型号：无型号',
         summary_df['分類'] + ' 型号：' + summary_df['models'].astype(str)
     )
-    
+
+    # Add prefix for ADULT TOY category
+    adult_toy_prefix = '成人用品 成人解决生理需求用|热塑性弹性体TPE制 '
+    summary_df['报关'] = np.where(
+        summary_df['分類'] == 'ADULT TOY',
+        adult_toy_prefix + summary_df['报关'],
+        summary_df['报关']
+    )
+
     return summary_df
