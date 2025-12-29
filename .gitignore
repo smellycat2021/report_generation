@@ -31,8 +31,8 @@ instance/
 Thumbs.db
 
 # Uploads and Reports (optional - uncomment if you don't want to commit these)
-# uploads/
-# reports/
+uploads/
+reports/
 
 # Logs
 *.log
