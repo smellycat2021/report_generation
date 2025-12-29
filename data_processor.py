@@ -254,10 +254,21 @@ def process_manufacturer_data(file_paths, mapping_config):
         models=('型番', join_unique_strings),
         total_pieces=('Pcs', 'sum'),
         total_prices=('Total', 'sum'),
-        box_weight=('单件净重(kg)', lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None),  # First non-null value
-        box_size=('规格', lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None),  # First non-null value
-        total_net_weight=('净重', 'sum'),  # Sum of all net weights (单件净重 * Pcs)
     ).reset_index()
+
+    # Add weight and size columns separately to use Chinese column names with parentheses
+    summary_df['单件净重(kg)'] = master_df.groupby(['品牌', '品名', '价格区间', '分類','産地'], observed=True)['单件净重(kg)'].apply(
+        lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None
+    ).values
+
+    summary_df['规格'] = master_df.groupby(['品牌', '品名', '价格区间', '分類','産地'], observed=True)['规格'].apply(
+        lambda x: x.dropna().iloc[0] if len(x.dropna()) > 0 else None
+    ).values
+
+    summary_df['净重'] = master_df.groupby(['品牌', '品名', '价格区间', '分類','産地'], observed=True)['净重'].sum().values
+
+    # Replace 净重 with None if value is 0 (means no weight data available)
+    summary_df['净重'] = summary_df['净重'].apply(lambda x: None if x == 0 else x)
 
     # Build 报关 column with model information
     summary_df['报关'] = np.where(
