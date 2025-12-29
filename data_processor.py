@@ -262,15 +262,23 @@ def process_manufacturer_data(file_paths, mapping_config):
     # Build 报关 column with model information
     summary_df['报关'] = np.where(
         (summary_df['models'].isna()) | (summary_df['models'] == ''),
-        summary_df['分類'] + ' 型号：无型号',
-        summary_df['分類'] + ' 型号：' + summary_df['models'].astype(str)
+        '型号：无型号',
+        '型号：' + summary_df['models'].astype(str)
     )
 
     # Add prefix for ADULT TOY category
     adult_toy_prefix = '成人用品 成人解决生理需求用|热塑性弹性体TPE制 '
     summary_df['报关'] = np.where(
-        summary_df['分類'] == 'ADULT TOY',
+        (summary_df['分類'] == 'ADULT TOY') | (summary_df['分類'] == 'ELECTRIC ADULT TOY') | (summary_df['分類'] == 'CLOTHING'),
         adult_toy_prefix + summary_df['报关'],
+        summary_df['报关']
+    )
+
+    # add prefix for lotion category
+    lotion_prefix = '润滑液人体润滑用|水90%，甘油5%，聚丙烯酸钠5%|不含从石油或沥青提取矿物油类 '
+    summary_df['报关'] = np.where(
+        summary_df['分類'] == 'LOTION',
+        lotion_prefix + summary_df['报关'],
         summary_df['报关']
     )
 
