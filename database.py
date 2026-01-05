@@ -102,3 +102,42 @@ class KnownProductName(db.Model):
 
     def __repr__(self):
         return f'<KnownProductName {self.product_name}>'
+
+# Model for Quotation History (for price matching)
+class QuotationHistory(db.Model):
+    __tablename__ = 'quotation_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, index=True)  # Date from filename (YYYYMMDD.xlsx)
+    merchant = db.Column(db.String(100), nullable=False, index=True)  # Column 0 from Excel
+    title = db.Column(db.String(255), nullable=False, index=True)  # Column 3 from Excel
+    count = db.Column(db.Float, nullable=False)  # Column 4 from Excel
+    price = db.Column(db.Float, nullable=False)  # Column 5 from Excel
+    total_price = db.Column(db.Float, nullable=False)  # Column 6 from Excel (or calculated)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Composite indexes for fast price lookups
+    __table_args__ = (
+        db.Index('idx_merchant_title', 'merchant', 'title'),
+        db.Index('idx_merchant_title_date', 'merchant', 'title', 'date'),
+        # Unique constraint: same date + merchant + title cannot appear twice
+        db.UniqueConstraint('date', 'merchant', 'title', name='uq_quotation_entry'),
+    )
+
+    def to_dict(self):
+        """Convert model instance to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'date': self.date.isoformat() if self.date else None,
+            'merchant': self.merchant,
+            'title': self.title,
+            'count': self.count,
+            'price': self.price,
+            'total_price': self.total_price,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+    def __repr__(self):
+        return f'<QuotationHistory {self.date} {self.merchant} {self.title}: ¥{self.price}>'

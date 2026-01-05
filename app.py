@@ -1,12 +1,15 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 # Import database components
-from database import db, Report, ProductMapping, BrandMapping, KnownProductName, init_db
+from database import db, Report, ProductMapping, BrandMapping, KnownProductName, QuotationHistory, init_db
 from data_processor import process_manufacturer_data
 from report_generator import generate_summary_report
+from quotation_processor import process_purchase_order, match_prices, import_historical_quotation_to_db
+from quotation_generator import generate_quotation_sheet
 from werkzeug.utils import secure_filename
 import os
 import uuid
 import json
+from datetime import datetime
 from config import UPLOAD_FOLDER, REPORT_FOLDER, ALLOWED_EXTENSIONS, SQLALCHEMY_DATABASE_URI
 # Import other modules
 # from database import db
@@ -49,6 +52,11 @@ def brand_mappings_page():
 def known_names_page():
     # Serve the known product names management page
     return render_template('known-names.html')
+
+@app.route('/products/quotations')
+def quotation_history_page():
+    # Serve the quotation history management page
+    return render_template('quotation-history.html')
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -562,3 +570,296 @@ def delete_known_product_name(name_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to delete known product name: {str(e)}"}), 500
+
+# ===== Quotation History API Endpoints =====
+
+@app.route('/api/quotation-history', methods=['GET'])
+def get_quotation_history():
+    """
+    Get all quotation history with optional search/filter.
+    Query params:
+    - search: Search by merchant or title
+    - page: Page number (default: 1)
+    - per_page: Items per page (default: 50)
+    """
+    search = request.args.get('search', '').strip()
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
+
+    # Build query
+    query = QuotationHistory.query
+
+    # Apply search filter
+    if search:
+        query = query.filter(
+            db.or_(
+                QuotationHistory.merchant.ilike(f'%{search}%'),
+                QuotationHistory.title.ilike(f'%{search}%')
+            )
+        )
+
+    # Order by date descending (most recent first)
+    query = query.order_by(QuotationHistory.date.desc())
+
+    # Paginate
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "quotations": [q.to_dict() for q in pagination.items],
+        "total": pagination.total,
+        "page": page,
+        "per_page": per_page,
+        "pages": pagination.pages
+    }), 200
+
+@app.route('/api/quotation-history/<int:quotation_id>', methods=['GET'])
+def get_quotation_history_item(quotation_id):
+    """
+    Get a specific quotation history item by ID.
+    """
+    quotation = QuotationHistory.query.get(quotation_id)
+
+    if not quotation:
+        return jsonify({"error": "Quotation history item not found"}), 404
+
+    return jsonify(quotation.to_dict()), 200
+
+@app.route('/api/quotation-history', methods=['POST'])
+def create_quotation_history():
+    """
+    Create a new quotation history entry.
+    Request body: {"date": "2025-12-26", "merchant": "...", "title": "...",
+                   "count": 10, "price": 100, "total_price": 1000}
+    """
+    data = request.json
+
+    # Validate required fields
+    required_fields = ['date', 'merchant', 'title', 'count', 'price']
+    for field in required_fields:
+        if field not in data or data[field] is None:
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+
+    try:
+        # Parse date
+        date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+
+        # Calculate total_price if not provided
+        total_price = data.get('total_price')
+        if total_price is None:
+            total_price = data['count'] * data['price']
+
+        # Check for duplicate (unique constraint: date + merchant + title)
+        existing = QuotationHistory.query.filter_by(
+            date=date,
+            merchant=data['merchant'],
+            title=data['title']
+        ).first()
+
+        if existing:
+            return jsonify({"error": "Quotation entry already exists for this date, merchant, and title"}), 409
+
+        # Create new quotation
+        quotation = QuotationHistory(
+            date=date,
+            merchant=data['merchant'],
+            title=data['title'],
+            count=data['count'],
+            price=data['price'],
+            total_price=total_price
+        )
+
+        db.session.add(quotation)
+        db.session.commit()
+
+        return jsonify(quotation.to_dict()), 201
+
+    except ValueError as e:
+        return jsonify({"error": f"Invalid date format: {str(e)}"}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to create quotation: {str(e)}"}), 500
+
+@app.route('/api/quotation-history/<int:quotation_id>', methods=['PUT'])
+def update_quotation_history(quotation_id):
+    """
+    Update an existing quotation history entry.
+    """
+    quotation = QuotationHistory.query.get(quotation_id)
+
+    if not quotation:
+        return jsonify({"error": "Quotation history item not found"}), 404
+
+    data = request.json
+
+    try:
+        # Update fields if provided
+        if 'date' in data:
+            quotation.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+
+        if 'merchant' in data:
+            quotation.merchant = data['merchant']
+
+        if 'title' in data:
+            quotation.title = data['title']
+
+        if 'count' in data:
+            quotation.count = data['count']
+
+        if 'price' in data:
+            quotation.price = data['price']
+
+        # Recalculate total_price if count or price changed
+        if 'count' in data or 'price' in data:
+            quotation.total_price = quotation.count * quotation.price
+
+        # Allow manual override of total_price
+        if 'total_price' in data:
+            quotation.total_price = data['total_price']
+
+        quotation.updated_at = datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify(quotation.to_dict()), 200
+
+    except ValueError as e:
+        return jsonify({"error": f"Invalid data: {str(e)}"}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to update quotation: {str(e)}"}), 500
+
+@app.route('/api/quotation-history/<int:quotation_id>', methods=['DELETE'])
+def delete_quotation_history(quotation_id):
+    """
+    Delete a quotation history entry.
+    """
+    quotation = QuotationHistory.query.get(quotation_id)
+
+    if not quotation:
+        return jsonify({"error": "Quotation history item not found"}), 404
+
+    try:
+        db.session.delete(quotation)
+        db.session.commit()
+        return jsonify({"message": "Quotation history deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to delete quotation: {str(e)}"}), 500
+
+# ===== Quotation Generation Endpoints =====
+
+@app.route('/api/quotation/upload-historical', methods=['POST'])
+def upload_historical_quotation():
+    """
+    Upload a historical quotation file (YYYYMMDD.xlsx).
+    Validates filename format, saves to uploads/history/,
+    and imports into QuotationHistory table.
+    """
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type. Only .xlsx and .xls files allowed"}), 400
+
+    # Validate filename format (YYYYMMDD.xlsx)
+    filename = secure_filename(file.filename)
+    date_str = filename.replace('.xlsx', '').replace('.xls', '')
+
+    try:
+        # Parse date from filename
+        date = datetime.strptime(date_str, '%Y%m%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid filename format. Expected YYYYMMDD.xlsx (e.g., 20251226.xlsx)"}), 400
+
+    try:
+        # Save file to uploads/history/
+        history_folder = os.path.join(UPLOAD_FOLDER, 'history')
+        os.makedirs(history_folder, exist_ok=True)
+
+        filepath = os.path.join(history_folder, filename)
+        file.save(filepath)
+
+        # Import to database
+        import_result = import_historical_quotation_to_db(filepath, date)
+
+        return jsonify({
+            "message": "Historical quotation uploaded and imported successfully",
+            "filename": filename,
+            "date": date.isoformat(),
+            "import_summary": import_result
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to process historical quotation: {str(e)}"}), 500
+
+@app.route('/api/quotation/generate', methods=['POST'])
+def generate_quotation():
+    """
+    Upload purchase order and generate quotation sheet.
+    Accepts: multipart form with 'file' (purchase order XLSX)
+    Returns: {quotation_id: "...", download_url: "...", match_stats: {...}}
+
+    Process:
+    1. Save purchase order to uploads/purchase_orders/
+    2. Parse purchase order (first tab only, cols 0, 3, 4)
+    3. Match against QuotationHistory (merchant + title, latest date)
+    4. Generate quotation sheet with matched prices
+    5. Return download link and match statistics
+    """
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type. Only .xlsx and .xls files allowed"}), 400
+
+    try:
+        # Save file to uploads/purchase_orders/
+        po_folder = os.path.join(UPLOAD_FOLDER, 'purchase_orders')
+        os.makedirs(po_folder, exist_ok=True)
+
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(po_folder, filename)
+        file.save(filepath)
+
+        # Process purchase order
+        purchase_df = process_purchase_order(filepath)
+
+        # Match prices
+        matched_df, match_stats = match_prices(purchase_df)
+
+        # Generate quotation sheet
+        quotation_filename = generate_quotation_sheet(matched_df)
+
+        # Generate quotation ID (timestamp-based)
+        quotation_id = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        return jsonify({
+            "message": "Quotation generated successfully",
+            "quotation_id": quotation_id,
+            "filename": quotation_filename,
+            "download_url": f"/api/quotation/download/{quotation_filename}",
+            "match_stats": match_stats
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate quotation: {str(e)}"}), 500
+
+@app.route('/api/quotation/download/<filename>', methods=['GET'])
+def download_quotation(filename):
+    """
+    Download generated quotation sheet.
+    """
+    try:
+        return send_from_directory(REPORT_FOLDER, filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"error": "Quotation file not found"}), 404

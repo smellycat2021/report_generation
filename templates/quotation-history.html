@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报价历史管理 - Quotation History</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .nav-links {
+            margin-bottom: 20px;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pagination button {
+            min-width: 80px;
+        }
+
+        .pagination span {
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .message {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .message-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/products">← 返回 Back to Products Manager</a>
+        </div>
+
+        <h1>报价历史管理 Quotation History Management</h1>
+        <p class="subtitle">管理历史报价数据，用于生成采购订单报价单 | Manage historical quotation data for purchase orders</p>
+
+        <div id="message" class="message"></div>
+
+        <div class="controls">
+            <input type="text" id="searchBox" class="search-box" placeholder="🔍 搜索商家或品名 Search by merchant or title...">
+            <button class="btn btn-primary" onclick="openAddModal()">
+                ➕ 添加报价 Add Quotation
+            </button>
+        </div>
+
+        <div id="tableContainer" class="table-container">
+            <div class="loading">Loading quotation history...</div>
+        </div>
+
+        <div class="pagination" id="pagination">
+            <button class="btn btn-secondary" id="prevBtn" onclick="prevPage()">上一页 Previous</button>
+            <span id="pageInfo">Page 1</span>
+            <button class="btn btn-secondary" id="nextBtn" onclick="nextPage()">下一页 Next</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="quotationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">添加报价 Add Quotation</h2>
+            </div>
+            <form id="quotationForm" onsubmit="saveQuotation(event)">
+                <div class="form-group">
+                    <label for="date">日期 Date *</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="merchant">商家 Merchant *</label>
+                    <input type="text" id="merchant" name="merchant" required>
+                </div>
+                <div class="form-group">
+                    <label for="title">品名 Title *</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="count">数量 Count *</label>
+                    <input type="number" id="count" name="count" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="price">单价 Price *</label>
+                    <input type="number" id="price" name="price" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="totalPrice">总价 Total Price (auto-calculated)</label>
+                    <input type="number" id="totalPrice" name="totalPrice" step="0.01" readonly>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        取消 Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        保存 Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentEditId = null;
+        let searchQuery = '';
+
+        // Auto-calculate total price
+        document.getElementById('count').addEventListener('input', calculateTotal);
+        document.getElementById('price').addEventListener('input', calculateTotal);
+
+        function calculateTotal() {
+            const count = parseFloat(document.getElementById('count').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            document.getElementById('totalPrice').value = (count * price).toFixed(2);
+        }
+
+        // Search functionality
+        let searchTimeout;
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = e.target.value;
+                currentPage = 1;
+                loadQuotations();
+            }, 500);
+        });
+
+        // Load quotations
+        async function loadQuotations() {
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    per_page: 50,
+                    search: searchQuery
+                });
+
+                const response = await fetch(`/api/quotation-history?${params}`);
+                const data = await response.json();
+
+                if (data.quotations && data.quotations.length > 0) {
+                    renderTable(data.quotations);
+                    updatePagination(data.page, data.pages, data.total);
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                showMessage('Failed to load quotations: ' + error.message, 'error');
+            }
+        }
+
+        function renderTable(quotations) {
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日期 Date</th>
+                            <th>商家 Merchant</th>
+                            <th>品名 Title</th>
+                            <th>数量 Count</th>
+                            <th>单价 Price</th>
+                            <th>总价 Total</th>
+                            <th>操作 Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${quotations.map(q => `
+                            <tr>
+                                <td>${q.date || ''}</td>
+                                <td>${q.merchant || ''}</td>
+                                <td>${q.title || ''}</td>
+                                <td>${q.count != null ? q.count.toFixed(2) : ''}</td>
+                                <td>¥${q.price != null ? q.price.toFixed(2) : ''}</td>
+                                <td>¥${q.total_price != null ? q.total_price.toFixed(2) : ''}</td>
+                                <td>
+                                    <div class="actions">
+                                        <button class="btn btn-sm btn-primary" onclick="editQuotation(${q.id})">
+                                            编辑 Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteQuotation(${q.id})">
+                                            删除 Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        function showEmptyState() {
+            const html = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>没有报价历史 No Quotation History</h3>
+                    <p>点击"添加报价"按钮开始添加历史报价数据</p>
+                    <p><small>Click "Add Quotation" to start adding historical quotation data</small></p>
+                </div>
+            `;
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        function updatePagination(page, pages, total) {
+            currentPage = page;
+            totalPages = pages;
+            document.getElementById('pageInfo').textContent = `Page ${page} of ${pages} (${total} total)`;
+            document.getElementById('prevBtn').disabled = page <= 1;
+            document.getElementById('nextBtn').disabled = page >= pages;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadQuotations();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadQuotations();
+            }
+        }
+
+        // Modal functions
+        function openAddModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = '添加报价 Add Quotation';
+            document.getElementById('quotationForm').reset();
+            document.getElementById('quotationModal').classList.add('show');
+        }
+
+        async function editQuotation(id) {
+            try {
+                const response = await fetch(`/api/quotation-history/${id}`);
+                const quotation = await response.json();
+
+                currentEditId = id;
+                document.getElementById('modalTitle').textContent = '编辑报价 Edit Quotation';
+                document.getElementById('date').value = quotation.date;
+                document.getElementById('merchant').value = quotation.merchant;
+                document.getElementById('title').value = quotation.title;
+                document.getElementById('count').value = quotation.count;
+                document.getElementById('price').value = quotation.price;
+                document.getElementById('totalPrice').value = quotation.total_price;
+                document.getElementById('quotationModal').classList.add('show');
+            } catch (error) {
+                showMessage('Failed to load quotation: ' + error.message, 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('quotationModal').classList.remove('show');
+            currentEditId = null;
+        }
+
+        async function saveQuotation(event) {
+            event.preventDefault();
+
+            const formData = {
+                date: document.getElementById('date').value,
+                merchant: document.getElementById('merchant').value,
+                title: document.getElementById('title').value,
+                count: parseFloat(document.getElementById('count').value),
+                price: parseFloat(document.getElementById('price').value),
+                total_price: parseFloat(document.getElementById('totalPrice').value)
+            };
+
+            try {
+                const url = currentEditId
+                    ? `/api/quotation-history/${currentEditId}`
+                    : '/api/quotation-history';
+
+                const method = currentEditId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to save quotation');
+                }
+
+                closeModal();
+                loadQuotations();
+                showMessage(
+                    currentEditId ? 'Quotation updated successfully' : 'Quotation added successfully',
+                    'success'
+                );
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function deleteQuotation(id) {
+            if (!confirm('确定要删除这条报价记录吗？\nAre you sure you want to delete this quotation?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/quotation-history/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete quotation');
+                }
+
+                loadQuotations();
+                showMessage('Quotation deleted successfully', 'success');
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message message-${type} show`;
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('quotationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Load quotations on page load
+        loadQuotations();
+    </script>
+</body>
+</html>

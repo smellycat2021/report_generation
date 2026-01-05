@@ -14,9 +14,26 @@
             </a>
         </div>
 
-        <h1>📈 报表生成器 Board Report Generator</h1>
-        <p>上传制造商Excel文件 (XLSX, XLS) 并生成合并汇总报表 | Upload manufacturer Excel files and generate a consolidated summary report.</p>
-        
+        <h1>📈 报表生成器 Report Generator</h1>
+
+        <!-- Report Type Selector -->
+        <div style="margin-bottom: 30px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+            <h3 style="margin-bottom: 15px; color: #333;">选择报表类型 Select Report Type</h3>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                    <input type="radio" name="reportType" value="board" checked style="width: 18px; height: 18px;">
+                    <span style="font-size: 16px;">📊 Board Report 现有报表</span>
+                </label>
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                    <input type="radio" name="reportType" value="quotation" style="width: 18px; height: 18px;">
+                    <span style="font-size: 16px;">💰 Quotation Sheet 报价单</span>
+                </label>
+            </div>
+            <p id="reportTypeDescription" style="margin-top: 10px; color: #666; font-size: 14px;">
+                上传制造商Excel文件并生成合并汇总报表 | Upload manufacturer Excel files and generate a consolidated summary report.
+            </p>
+        </div>
+
         <div class="drop-area" id="dropArea">
             <p>拖放文件到此处，或点击选择文件 | Drag & Drop files here, or click to select files </p>
             <input type="file" id="fileInput" multiple accept=".xlsx, .xls" style="display: none;">
